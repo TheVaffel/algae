@@ -98,9 +98,9 @@ impl<T, const M: usize, const N: usize> Index<(usize, usize)> for TMatrix<T, M, 
 }
 
 
-/// Square matrix multiplication
-impl<T: Clone + Copy + Sum + Add<Output = T> + Mul<Output = T> + Zero, const N: usize> Mul<TVector<T, N>> for TMatrix<T, N, N> {
-    type Output = TVector<T, N>;
+/// Matrix-vector multiplication
+impl<T: Clone + Copy + Sum + Add<Output = T> + Mul<Output = T> + Zero, const M: usize, const N: usize> Mul<TVector<T, N>> for TMatrix<T, M, N> {
+    type Output = TVector<T, M>;
 
     fn mul(self, other: TVector<T, N>) -> Self::Output {
         Self::Output {
@@ -108,6 +108,28 @@ impl<T: Clone + Copy + Sum + Add<Output = T> + Mul<Output = T> + Zero, const N: 
         }
     }
 }
+
+/// Matrix-matrix multiplication
+impl<T: Clone + Copy + Sum + Add<Output = T> + Mul<Output = T> + Zero,
+     const L: usize,
+     const M: usize,
+     const N: usize>
+    Mul<TMatrix<T, M, N>> for TMatrix<T, L, M> {
+        type Output = TMatrix<T, L, N>;
+        fn mul(self, other: TMatrix<T, M, N>) -> Self::Output {
+            Self::Output {
+                data: from_fn(
+                    |i| from_fn::<T, L, _>(
+                        |j| from_fn::<T, M, _>(
+                            |k| self.data[k][j] * other.data[i][k]
+                        ).iter().cloned().sum()
+                    )
+                )
+            }
+        }
+    }
+
+
 
 /// Shorthands
 pub type Matrix<const M: usize, const N: usize> = TMatrix<f32, M, N>;
@@ -126,5 +148,74 @@ mod tests {
         assert_eq!(m0[(0, 1)], 3.0);
         assert_eq!(m0[(1, 0)], 2.0);
         assert_eq!(m0[(1, 1)], 4.0);
+    }
+
+    #[test]
+    fn can_construct_mat2_from_array() {
+        let m0 = Mat2::from_array(&[1.0, 2.0,
+                                    3.0, 4.0]);
+
+        assert_eq!(m0[(0, 0)], 1.0);
+        assert_eq!(m0[(0, 1)], 3.0);
+        assert_eq!(m0[(1, 0)], 2.0);
+        assert_eq!(m0[(1, 1)], 4.0);
+    }
+
+    #[test]
+    fn can_multiply_vec2_by_mat2() {
+        let m0 = Mat2::new(1.0, 2.0,
+                           3.0, 4.0);
+        let v0 = Vec2::new(5.0, 6.0);
+
+        let v1 = m0 * v0;
+
+        assert_eq!(v1[0], 17.0);
+        assert_eq!(v1[1], 39.0);
+    }
+
+    #[test]
+    fn can_multiply_vec2_by_mat32() {
+
+        let m0 = Matrix::<3, 2>::from_array(&[1.0, 2.0,
+                                              3.0, 4.0,
+                                              5.0, 6.0]);
+        let v0 = Vec2::new(7.0, 8.0);
+
+        let v1 = m0 * v0;
+
+        assert_eq!(v1[0], 7.0 + 16.0);
+        assert_eq!(v1[1], 21.0 + 32.0);
+        assert_eq!(v1[2], 35.0 + 48.0);
+    }
+
+    #[test]
+    fn can_multiply_mat2_by_mat2() {
+        let m0 = Mat2::new(1.0, 2.0,
+                           3.0, 4.0);
+        let m1 = Mat2::new(5.0, 6.0,
+                           7.0, 8.0);
+
+        let m2 = m0 * m1;
+
+        assert_eq!(m2[(0, 0)], 5.0 + 14.0);
+        assert_eq!(m2[(0, 1)], 15.0 + 28.0);
+        assert_eq!(m2[(1, 0)], 6.0 + 16.0);
+        assert_eq!(m2[(1, 1)], 18.0 + 32.0);
+    }
+
+    #[test]
+    fn can_multiply_mat23_by_mat32() {
+
+        let m0 = Matrix::<2, 3>::from_array(&[1.0, 2.0, 3.0,
+                                              4.0, 5.0, 6.0]);
+        let m1 = Matrix::<3, 2>::from_array(&[7.0, 8.0,
+                                              9.0, 10.0,
+                                              11.0, 12.0]);
+        let m2 = m0 * m1;
+
+        assert_eq!(m2[(0, 0)], 7.0 + 18.0 + 33.0);
+        assert_eq!(m2[(0, 1)], 28.0 + 45.0 + 66.0);
+        assert_eq!(m2[(1, 0)], 8.0 + 20.0 + 36.0);
+        assert_eq!(m2[(1, 1)], 32.0 + 50.0 + 72.0);
     }
 }
