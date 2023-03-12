@@ -1,4 +1,5 @@
 use std::ops::{Add, Index, Sub, Mul, Div};
+use std::iter::Sum;
 use core::array::from_fn;
 use num::traits::Zero;
 
@@ -31,6 +32,16 @@ impl<T: Copy> TVector<T, 4> {
     }
 }
 
+/// Index implementation for vectors
+impl<T, const N: usize> Index<usize> for TVector<T, N> {
+    type Output = T;
+
+    fn index(&self, ind: usize) -> &T {
+        &self.data[ind]
+    }
+}
+
+/// Generic element wise operator application
 fn element_wise<T: Copy,
                 const N: usize,
                 F: Fn(T, T) -> T>(a: TVector<T, N>,
@@ -41,6 +52,7 @@ fn element_wise<T: Copy,
     }
 }
 
+/// Zero implementation for vectors
 impl<T: Zero + Copy, const N: usize> Zero for TVector<T, N> {
     fn zero() -> Self {
         Self {
@@ -90,15 +102,12 @@ impl<T: Div<Output = T> + Copy, const N: usize> Div for TVector<T, N> {
     }
 }
 
-/// Index implementation for vectors
-impl<T, const N: usize> Index<usize> for TVector<T, N> {
-    type Output = T;
-
-    fn index(&self, ind: usize) -> &T {
-        &self.data[ind]
+/// Dot product for vectors
+impl<T: Mul<Output = T> + Add + Copy + Sum, const N: usize> TVector<T, N> {
+    fn dot(self, other: Self) -> T {
+        (self * other).data.iter().cloned().sum()
     }
 }
-
 
 /// Shorthands
 pub type Vector<const N: usize> = TVector<f32, N>;
@@ -196,5 +205,16 @@ mod tests {
         assert_eq!(v2[0], 1.0 / 3.0);
         assert_eq!(v2[1], 3.0 / 2.0);
         assert_eq!(v2[2], 4.0 / 1.0);
+    }
+
+    #[test]
+    fn can_dot_v3() {
+
+        let v0 = Vec3::new(1.0, 3.0, 4.0);
+        let v1 = Vec3::new(3.0, 2.0, 1.0);
+
+        let d = v0.dot(v1);
+
+        assert_eq!(d, 13.0);
     }
 }
