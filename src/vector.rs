@@ -104,7 +104,7 @@ impl<T: Div<Output = T> + Copy, const N: usize> Div for TVector<T, N> {
 
 /// Dot product for vectors
 impl<T: Mul<Output = T> + Add + Copy + Sum, const N: usize> TVector<T, N> {
-    fn dot(self, other: Self) -> T {
+    pub fn dot(self, other: Self) -> T {
         (self * other).data.iter().cloned().sum()
     }
 }
