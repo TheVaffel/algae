@@ -3,12 +3,15 @@ use std::iter::Sum;
 use std::ops::{Add, Index, Sub, Mul};
 use core::array::from_fn;
 
-use crate::vector::TVector;
+use crate::vector::{TVector, Vec2};
 
+/// M * N matrix with elements of type T. Stored column-major
 #[derive(Clone,Copy,PartialEq,Debug)]
 pub struct TMatrix<T, const M: usize, const N: usize> {
     pub data: [[T ; M] ; N],
 }
+
+/// Constructors
 
 impl<T: Copy> TMatrix<T, 2, 2> {
     pub fn new(e0: T, e1: T,
@@ -42,6 +45,17 @@ impl<T: Copy> TMatrix<T, 4, 4> {
                    [e1, e5, e9, e13],
                    [e2, e6, e10, e14],
                    [e3, e7, e11, e15]]
+        }
+    }
+}
+
+impl<T: Copy, const M: usize, const N: usize> TMatrix<T, M, N> {
+    pub fn from_array(arr: &[T]) -> Self {
+        Self {
+            data: from_fn(|i| from_fn(|j| {
+                let ind = j * N + i;
+                arr[ind]
+            }))
         }
     }
 }
